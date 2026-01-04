@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway Track Quiz - اختبار تجميع السكة الحديد</title>
+    
+    <!-- تحميل مكتبة Tailwind CSS للتصميم -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- تحميل React و ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- تحميل Babel لترجمة كود React داخل المتصفح -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- تحميل الخطوط (Cairo و Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-950">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // --- تعريف الأيقونات (بديل لمكتبة lucide-react لتعمل في ملف واحد) ---
+        const Lightbulb = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.4 1.5-3.8 0-3.2-2.8-6-6-6s-6 2.8-6 6c0 1.4.5 2.8 1.5 3.8.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>;
+        const CheckCircle2 = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>;
+        const XCircle = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>;
+        const RefreshCcw = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>;
+        const Globe = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>;
+        const ArrowRight = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>;
+        const ArrowLeft = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>;
+        const SkipForward = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/></svg>;
+
+        function App() {
+            const [currentQuestion, setCurrentQuestion] = useState(0);
+            const [score, setScore] = useState(0);
+            const [showScore, setShowScore] = useState(false);
+            const [selectedOption, setSelectedOption] = useState(null);
+            const [showHint, setShowHint] = useState(false);
+            const [lang, setLang] = useState('en'); // 'en' or 'ar'
+            const [isCorrect, setIsCorrect] = useState(null);
+
+            // --- 1. DATA: 40 Questions ---
+            const questionsData = [
+                {
+                    id: 1,
+                    question: "What is the primary purpose of fittings and fastenings in a railway track?",
+                    questionAr: "ما هو الغرض الأساسي من التركيبات والمثبتات في خط السكة الحديد؟",
+                    options: {
+                        A: "To reduce the cost of track maintenance.",
+                        B: "Securing connections between rail to rail and rail to sleepers.",
+                        C: "Maintaining the gauge in an exact manner on curves only.",
+                        D: "To increase the bearing area of the ballast on the formation."
+                    },
+                    optionsAr: {
+                        A: "لتقليل تكلفة صيانة المسار.",
+                        B: "تأمين الوصلات بين القضبان وبعضها وبين القضبان والعوارض.",
+                        C: "الحفاظ على الاتساع بدقة في المنحنيات فقط.",
+                        D: "لزيادة مساحة التحميل للبازلت على التكوين."
+                    },
+                    correct: "B",
+                    hint: "Think about what holds the different parts of the track together securely.",
+                    hintAr: "فكر في ما يربط أجزاء المسار المختلفة ببعضها البعض بإحكام."
+                },
+                {
+                    id: 2,
+                    question: "Which component is specifically used at the joints of rails to maintain the continuity of the rail line?",
+                    questionAr: "ما هو المكون المستخدم تحديداً عند وصلات القضبان للحفاظ على استمرارية خط السكة؟",
+                    options: { A: "Bearing plates", B: "Fish plates", C: "Rail chairs", D: "Spikes" },
+                    optionsAr: { A: "ألواح التحميل", B: "ألواح السمكة (Fish plates)", C: "كراسي السكة", D: "المسامير" },
+                    correct: "B",
+                    hint: "It's named after a sea creature and joins two rails end-to-end.",
+                    hintAr: "سميت على اسم مخلوق بحري وتربط قضيبين من النهاية إلى النهاية."
+                },
+                {
+                    id: 3,
+                    question: "One function of a fish plate is to allow for changes in rail length due to temperature variation. How is this achieved?",
+                    questionAr: "إحدى وظائف لوح السمكة هي السماح بتغيرات في طول القضيب بسبب تغير درجات الحرارة. كيف يتحقق ذلك؟",
+                    options: {
+                        A: "By tightening the bolts and nuts firmly to prevent any movement.",
+                        B: "By ensuring the fish plate touches the web of the rail.",
+                        C: "By providing necessary expansion gap at the joints.",
+                        D: "By having the same strength in bending as the original rails."
+                    },
+                    optionsAr: {
+                        A: "عن طريق شد المسامير والصواميل بإحكام لمنع أي حركة.",
+                        B: "من خلال التأكد من أن لوح السمكة يلامس عصب القضيب.",
+                        C: "من خلال توفير فجوة التمدد اللازمة عند الوصلات.",
+                        D: "من خلال امتلاك نفس قوة الانحناء مثل القضبان الأصلية."
+                    },
+                    correct: "C",
+                    hint: "Metal expands when hot; there needs to be space for this.",
+                    hintAr: "يتمدد المعدن عندما يسخن؛ يجب أن يكون هناك مساحة لذلك."
+                },
+                {
+                    id: 4,
+                    question: "Which of the following is a critical requirement for a fish plate regarding thermal movement?",
+                    questionAr: "أي مما يلي يعتبر متطلباً حيوياً للوح السمكة فيما يتعلق بالحركة الحرارية؟",
+                    options: {
+                        A: "It must be made of cast iron for flexibility.",
+                        B: "It should not fail under heavy loads and vibrations.",
+                        C: "It should have a bone shape for all types of rails.",
+                        D: "It should not touch the web of the rail."
+                    },
+                    optionsAr: {
+                        A: "يجب أن يكون مصنوعاً من الحديد الزهر للمرونة.",
+                        B: "يجب ألا ينهار تحت الأحمال الثقيلة والاهتزازات.",
+                        C: "يجب أن يكون له شكل عظم لجميع أنواع القضبان.",
+                        D: "يجب ألا يلامس عصب القضيب."
+                    },
+                    correct: "D",
+                    hint: "To allow the rail to expand freely, the plate shouldn't grip the middle part too tightly.",
+                    hintAr: "للسماح للقضيب بالتمدد بحرية، يجب ألا يمسك اللوح بالجزء الأوسط بإحكام شديد."
+                },
+                {
+                    id: 5,
+                    question: "What specific type of fish plate is commonly used for connecting flat-footed rails to resist lateral and vertical bending stresses?",
+                    questionAr: "ما هو النوع المحدد من ألواح السمكة المستخدم عادة لتوصيل القضبان ذات القاعدة المسطحة لمقاومة إجهادات الانحناء الجانبية والرأسية؟",
+                    options: { A: "Increased depth fish plates", B: "Deep channel fish plates", C: "Bone shaped fish plates", D: "Manganese steel fish plates" },
+                    optionsAr: { A: "ألواح سمكة ذات عمق زائد", B: "ألواح سمكة بقناة عميقة", C: "ألواح سمكة على شكل عظمة", D: "ألواح سمكة من الصلب المنجنيزي" },
+                    correct: "C",
+                    hint: "This shape provides structural strength similar to a biological bone.",
+                    hintAr: "يوفر هذا الشكل قوة هيكلية مشابهة للعظم البيولوجي."
+                },
+                {
+                    id: 6,
+                    question: "What is the primary function of the increased depth fish plate used for bull-headed rails?",
+                    questionAr: "ما هي الوظيفة الأساسية للوح السمكة ذو العمق الزائد المستخدم للقضبان ذات الرأس الثوري (bull-headed)؟",
+                    options: { A: "To reduce the expansion gap to zero.", B: "To secure greater stiffness of the rail joint.", C: "To allow for easy renewal of the rail.", D: "To absorb all vertical vibrations of the rail." },
+                    optionsAr: { A: "لتقليل فجوة التمدد إلى الصفر.", B: "لضمان صلابة أكبر لوصلة السكة.", C: "للسماح بتجديد السكة بسهولة.", D: "لامتصاص جميع الاهتزازات الرأسية للسكة." },
+                    correct: "B",
+                    hint: "More depth usually implies more rigidity and stiffness.",
+                    hintAr: "العمق الأكبر يعني عادةً المزيد من الصلابة والجمود."
+                },
+                {
+                    id: 7,
+                    question: "The holes drilled in the web of rails for fish plates are intentionally made slightly wider than the bolts. What is the reason for this design feature?",
+                    questionAr: "الثقوب المحفورة في عصب القضبان لألواح السمكة تُصنع عمداً أوسع قليلاً من المسامير. ما هو سبب ميزة التصميم هذه؟",
+                    options: { A: "To reduce the cost of manufacturing the bolts.", B: "To facilitate the use of different bolt sizes.", C: "To allow for expansion and contraction in rails due to temperature variation.", D: "To ensure a tight, permanent, immovable connection." },
+                    optionsAr: { A: "لتقليل تكلفة تصنيع المسامير.", B: "لتسهيل استخدام أحجام مسامير مختلفة.", C: "للسماح بتمدد وانكماش القضبان بسبب تغير درجات الحرارة.", D: "لضمان اتصال محكم ودائم وغير متحرك." },
+                    correct: "C",
+                    hint: "If the fit was perfect, the rail couldn't slide when it gets hot or cold.",
+                    hintAr: "إذا كان التوافق مثالياً، فلن يتمكن القضيب من الانزلاق عندما يسخن أو يبرد."
+                },
+                {
+                    id: 8,
+                    question: "What is the primary function of bearing plates in the railway track structure?",
+                    questionAr: "ما هي الوظيفة الأساسية لألواح التحميل في هيكل السكة الحديد؟",
+                    options: { A: "To connect two adjacent rails at the joint.", B: "To serve as a seat for the rail on the sleeper.", C: "To prevent the rail from moving sideways.", D: "To adjust the rail height when needed." },
+                    optionsAr: { A: "لتوصيل قضيبين متجاورين عند الوصلة.", B: "لتكون بمثابة مقعد للقضيب على العارضة.", C: "لمنع القضيب من التحرك جانبيًا.", D: "لضبط ارتفاع القضيب عند الحاجة." },
+                    correct: "B",
+                    hint: "It acts as a chair or base for the rail to sit upon.",
+                    hintAr: "تعمل ككرسي أو قاعدة يجلس عليها القضيب."
+                },
+                {
+                    id: 9,
+                    question: "How do bearing plates contribute to reducing the intensity of loading on the sleepers?",
+                    questionAr: "كيف تساهم ألواح التحميل في تقليل شدة التحميل على العوارض؟",
+                    options: { A: "By being made of a material lighter than the rail.", B: "By increasing the bearing area on the sleepers.", C: "By transferring the load directly to the ballast.", D: "By reducing the speed of the train." },
+                    optionsAr: { A: "بأن تكون مصنوعة من مادة أخف من القضيب.", B: "عن طريق زيادة مساحة التحميل على العوارض.", C: "عن طريق نقل الحمل مباشرة إلى البازلت.", D: "عن طريق تقليل سرعة القطار." },
+                    correct: "B",
+                    hint: "Pressure = Force / Area. Spreading the force over a larger area reduces pressure.",
+                    hintAr: "الضغط = القوة / المساحة. توزيع القوة على مساحة أكبر يقلل الضغط."
+                },
+                {
+                    id: 10,
+                    question: "What specific type of wear to the sleepers is prevented by the use of bearing plates, as described in the text?",
+                    questionAr: "ما هو النوع المحدد من تآكل العوارض الذي يتم منعه باستخدام ألواح التحميل، كما هو موضح في النص؟",
+                    options: { A: "Soil cutting", B: "Spike wear", C: "Abrasion by ballast", D: "Rail cutting" },
+                    optionsAr: { A: "قطع التربة", B: "تآكل المسامير", C: "الكشط بواسطة البازلت", D: "قطع القضيب (Rail cutting)" },
+                    correct: "D",
+                    hint: "Without the plate, the sharp bottom of the rail would slice into the wooden sleeper.",
+                    hintAr: "بدون اللوح، سيقطع الجزء السفلي الحاد للقضيب العارضة الخشبية."
+                },
+                {
+                    id: 11,
+                    question: "On which parts of a curve track are canted bearing plates typically used?",
+                    questionAr: "في أي أجزاء من مسار المنحنى تُستخدم عادة ألواح التحميل المائلة (Canted)؟",
+                    options: { A: "Below the outside rail and on the bridge.", B: "Only below the inside rail of the curve.", C: "Exclusively on turnout tracks.", D: "On all soft wooden sleepers only." },
+                    optionsAr: { A: "أسفل القضيب الخارجي وعلى الجسر.", B: "فقط أسفل القضيب الداخلي للمنحنى.", C: "حصرياً على مسارات التحويل.", D: "على جميع العوارض الخشبية اللينة فقط." },
+                    correct: "A",
+                    hint: "Think about where the centrifugal force pushes the train on a curve.",
+                    hintAr: "فكر في المكان الذي تدفع فيه قوة الطرد المركزي القطار على المنحنى."
+                },
+                {
+                    id: 12,
+                    question: "What is the specific inward tile (canted) that canted bearing plates are designed to lay the rails at?",
+                    questionAr: "ما هو الميل الداخلي المحدد (المائل) الذي صُممت ألواح التحميل المائلة لوضع القضبان عليه؟",
+                    options: { A: "1 in 50", B: "1 in 20", C: "1 in 10", D: "1 in 40" },
+                    optionsAr: { A: "1 في 50", B: "1 في 20", C: "1 في 10", D: "1 في 40" },
+                    correct: "B",
+                    hint: "This is a standard ratio for rail inclination, often associated with wheel coning.",
+                    hintAr: "هذه نسبة قياسية لميل السكة، وغالباً ما ترتبط بمخروطية العجلات."
+                },
+                {
+                    id: 13,
+                    question: "Which type of bearing plate is used in turnout tracks and other places where rails are to be laid flat?",
+                    questionAr: "أي نوع من ألواح التحميل يستخدم في مسارات التحويل والأماكن الأخرى التي يجب وضع القضبان فيها بشكل مسطح؟",
+                    options: { A: "Canted bearing plates", B: "Steel bearing plates", C: "Increased depth plates", D: "Flat bearing plates" },
+                    optionsAr: { A: "ألواح التحميل المائلة", B: "ألواح التحميل الفولاذية", C: "ألواح ذات عمق زائد", D: "ألواح التحميل المسطحة" },
+                    correct: "D",
+                    hint: "The name describes exactly how the rail sits: not tilted.",
+                    hintAr: "الاسم يصف بالضبط كيف يجلس القضيب: غير مائل."
+                },
+                {
+                    id: 14,
+                    question: "What is a major disadvantage of a bearing plate becoming loose due to sleeper settlement?",
+                    questionAr: "ما هو العيب الرئيسي لارتخاء لوح التحميل بسبب هبوط العارضة؟",
+                    options: { A: "It increases the wear of the spikes by vertical vibrations.", B: "The plate maintains the gauge in a better way.", C: "Moisture can enter the space between the plate and the sleeper, causing sleeper wear.", D: "It prevents the rail cutting of the sleepers." },
+                    optionsAr: { A: "يزيد من تآكل المسامير بسبب الاهتزازات الرأسية.", B: "يحافظ اللوح على الاتساع بطريقة أفضل.", C: "يمكن أن تدخل الرطوبة في الفراغ بين اللوح والعارضة، مما يسبب تآكل العارضة.", D: "يمنع قطع القضيب للعوارض." },
+                    correct: "C",
+                    hint: "Water is wood's enemy, especially when trapped under a metal plate.",
+                    hintAr: "الماء هو عدو الخشب، خاصة عندما يكون محبوساً تحت لوح معدني."
+                },
+                {
+                    id: 15,
+                    question: "When an injured spike in a loose bearing plate system is re-driven, requiring all other spikes to be pulled out, what is the resulting negative impact?",
+                    questionAr: "عند إعادة دق مسمار تالف في نظام ألواح التحميل المرتخية، مما يتطلب سحب جميع المسامير الأخرى، ما هو التأثير السلبي الناتج؟",
+                    options: { A: "It increases the overall stability of the track.", B: "It causes soil cutting on the curves.", C: "It reduces the holding power of the spikes.", D: "It makes the cast iron plate easily damaged." },
+                    optionsAr: { A: "يزيد من الاستقرار العام للمسار.", B: "يسبب قطع التربة في المنحنيات.", C: "يقلل من قوة التثبيت للمسامير.", D: "يجعل لوح الحديد الزهر يتلف بسهولة." },
+                    correct: "C",
+                    hint: "Putting a nail back into the same hole or disturbing the wood repeatedly makes it loose.",
+                    hintAr: "إعادة المسمار إلى نفس الثقب أو إزعاج الخشب بشكل متكرر يجعله مرتخياً."
+                },
+                {
+                    id: 16,
+                    question: "Which material for bearing plates is considered cheaper but is liable to be easily damaged, especially by derailed wheels?",
+                    questionAr: "أي مادة لألواح التحميل تعتبر أرخص ولكنها عرضة للتلف بسهولة، خاصة بواسطة العجلات الخارجة عن المسار؟",
+                    options: { A: "Steel", B: "Wrought iron", C: "Cast iron", D: "Aluminum" },
+                    optionsAr: { A: "الصلب", B: "الحديد المطاوع", C: "الحديد الزهر", D: "الألومنيوم" },
+                    correct: "C",
+                    hint: "It is brittle compared to steel.",
+                    hintAr: "إنه هش مقارنة بالصلب."
+                },
+                {
+                    id: 17,
+                    question: "What is one of the functions of a fish plate regarding the wheels' movement?",
+                    questionAr: "ما هي إحدى وظائف لوح السمكة فيما يتعلق بحركة العجلات؟",
+                    options: { A: "They prevent the free longitudinal movement of rails.", B: "They absorb the shock caused by the jumping of wheels over the expansion gap.", C: "They maintain the rail sections in a horizontal plane only.", D: "They reduce the intensity of loading on the sleepers." },
+                    optionsAr: { A: "تمنع الحركة الطولية الحرة للقضبان.", B: "تمتص الصدمة الناتجة عن قفز العجلات فوق فجوة التمدد.", C: "تحافظ على أقسام السكة في مستوى أفقي فقط.", D: "تقلل من شدة التحميل على العوارض." },
+                    correct: "B",
+                    hint: "Gaps cause bumps; the plate helps smooth out that transition.",
+                    hintAr: "الفجوات تسبب مطبات؛ اللوح يساعد على تخفيف هذا الانتقال."
+                },
+                {
+                    id: 18,
+                    question: "Which type of rail was historically used directly over the sleepers with dog spikes before bearing plates became common?",
+                    questionAr: "أي نوع من القضبان كان يُستخدم تاريخياً مباشرة فوق العوارض مع مسامير الكلب (dog spikes) قبل أن تصبح ألواح التحميل شائعة؟",
+                    options: { A: "Bull-headed rails", B: "Double-headed rails", C: "Flat-footed rails", D: "Increased depth rails" },
+                    optionsAr: { A: "القضبان ذات الرأس الثوري", B: "القضبان مزدوجة الرأس", C: "القضبان ذات القاعدة المسطحة", D: "قضبان ذات عمق زائد" },
+                    correct: "C",
+                    hint: "This rail has a wide base that sits naturally on a sleeper.",
+                    hintAr: "هذا القضيب له قاعدة عريضة تجلس بشكل طبيعي على العارضة."
+                },
+                {
+                    id: 19,
+                    question: "What is the collective term for the fittings used to secure the connections between rail to rail and rail to sleepers?",
+                    questionAr: "ما هو المصطلح الجامع للتركيبات المستخدمة لتأمين الوصلات بين القضبان وبعضها وبين القضبان والعوارض؟",
+                    options: { A: "Track chairs", B: "Sleepers", C: "Fastenings", D: "Ballast" },
+                    optionsAr: { A: "كراسي المسار", B: "العوارض", C: "المثبتات (Fastenings)", D: "البازلت" },
+                    correct: "C",
+                    hint: "It describes things that 'fasten' items together.",
+                    hintAr: "يصف الأشياء التي 'تثبت' العناصر معاً."
+                },
+                {
+                    id: 20,
+                    question: "Besides Fish plates and Bearing plates, which of the following is also mentioned as an important type of fastening?",
+                    questionAr: "بالإضافة إلى ألواح السمكة وألواح التحميل، أي مما يلي مذكور أيضاً كنوع مهم من المثبتات؟",
+                    options: { A: "Tie rods", B: "Fang Bolts and Hook Bolts", C: "Rail anchors", D: "Guard rails" },
+                    optionsAr: { A: "قضبان الربط", B: "مسامير الناب ومسامير الخطاف", C: "مراسي السكة", D: "قضبان الحماية" },
+                    correct: "B",
+                    hint: "Think of specific types of bolts used for holding down rails.",
+                    hintAr: "فكر في أنواع معينة من المسامير المستخدمة لتثبيت القضبان لأسفل."
+                },
+                {
+                    id: 21,
+                    question: "What is a major advantage of using bearing plates related to the life of the track components?",
+                    questionAr: "ما هي الميزة الرئيسية لاستخدام ألواح التحميل المتعلقة بعمر مكونات المسار؟",
+                    options: { A: "They increase the lifespan of the rail by reducing corrosion.", B: "They reduce the wear of spikes by vertical vibrations of rails against them.", C: "They eliminate the need for any other fastenings.", D: "They make the track completely noiseless." },
+                    optionsAr: { A: "تزيد من عمر السكة عن طريق تقليل التآكل.", B: "تقلل من تآكل المسامير بسبب الاهتزازات الرأسية للقضبان ضدها.", C: "تلغي الحاجة لأي مثبتات أخرى.", D: "تجعل المسار صامتاً تماماً." },
+                    correct: "B",
+                    hint: "It stabilizes the rail so it doesn't shake the spikes as much.",
+                    hintAr: "إنها تثبت القضيب بحيث لا يهز المسامير كثيراً."
+                },
+                {
+                    id: 22,
+                    question: "Which of the following is NOT listed as a type of spike in the provided text?",
+                    questionAr: "أي مما يلي غير مدرج كنوع من المسامير في النص المقدم؟",
+                    options: { A: "Round spikes", B: "Elastic spikes", C: "Key spikes", D: "Dog spikes" },
+                    optionsAr: { A: "المسامير المستديرة", B: "المسامير المرنة", C: "المسامير المفتاحية", D: "مسامير الكلب" },
+                    correct: "C",
+                    hint: "Common spikes are dog, round, and elastic. 'Key' is usually for chairs.",
+                    hintAr: "المسامير الشائعة هي الكلب، والمستديرة، والمرنة. 'المفتاح' عادة ما يكون للكراسي."
+                },
+                {
+                    id: 23,
+                    question: "For a fish plate, what is a key requirement concerning its structural integrity in relation to the original rail?",
+                    questionAr: "بالنسبة للوح السمكة، ما هو المتطلب الرئيسي فيما يتعلق بسلامته الهيكلية بالنسبة للقضيب الأصلي؟",
+                    options: { A: "It must be twice as strong as the original rail in bending.", B: "It should have half the strength of the original rail in bending.", C: "It should have the same strength in bending as the original rails.", D: "It must be completely rigid and non-flexible." },
+                    optionsAr: { A: "يجب أن يكون أقوى بمرتين من القضيب الأصلي في الانحناء.", B: "يجب أن يكون له نصف قوة القضيب الأصلي في الانحناء.", C: "يجب أن يكون له نفس قوة الانحناء مثل القضبان الأصلية.", D: "يجب أن يكون صلباً تماماً وغير مرن." },
+                    correct: "C",
+                    hint: "The joint shouldn't be a weak point; it needs to match the rail's strength.",
+                    hintAr: "يجب ألا تكون الوصلة نقطة ضعف؛ يجب أن تتطابق مع قوة القضيب."
+                },
+                {
+                    id: 24,
+                    question: "In the past, how were flat-footed rails fixed directly to the sleepers?",
+                    questionAr: "في الماضي، كيف كانت تُثبت القضبان ذات القاعدة المسطحة مباشرة على العوارض؟",
+                    options: { A: "With screw spikes and bearing plates.", B: "With fish bolts and rail chairs.", C: "With dog spikes alone.", D: "With fang bolts and elastic spikes." },
+                    optionsAr: { A: "بمسامير ملولبة وألواح تحميل.", B: "بمسامير السمكة وكراسي السكة.", C: "بمسامير الكلب (dog spikes) وحدها.", D: "بمسامير الناب ومسامير مرنة." },
+                    correct: "C",
+                    hint: "A simple spike driven directly into the wood was the old standard.",
+                    hintAr: "مسمار بسيط يُدق مباشرة في الخشب كان المعيار القديم."
+                },
+                {
+                    id: 25,
+                    question: "Which advantage of bearing plates is related to the proper alignment of the track?",
+                    questionAr: "أي ميزة لألواح التحميل تتعلق بالمحاذاة الصحيحة للمسار؟",
+                    options: { A: "Bearing plates prevent soil cutting on the curves.", B: "Bearing plates maintain the gauge in a better way.", C: "Bearing plates reduce the wear of spikes.", D: "Bearing plates reduce the intensity of loading." },
+                    optionsAr: { A: "ألواح التحميل تمنع قطع التربة في المنحنيات.", B: "ألواح التحميل تحافظ على الاتساع بطريقة أفضل.", C: "ألواح التحميل تقلل من تآكل المسامير.", D: "ألواح التحميل تقلل من شدة التحميل." },
+                    correct: "B",
+                    hint: "Gauge refers to the distance between rails; plates help keep this fixed.",
+                    hintAr: "يشير الاتساع إلى المسافة بين القضبان؛ الألواح تساعد في إبقاء هذا ثابتاً."
+                },
+                {
+                    id: 26,
+                    question: "Which type of bearing plate is commonly used on Indian Railways due to the ease with which they can be fitted in position?",
+                    questionAr: "أي نوع من ألواح التحميل يشيع استخدامه في السكك الحديدية الهندية نظراً لسهولة تثبيتها في مكانها؟",
+                    options: { A: "Cast iron", B: "Wrought iron", C: "Steel", D: "Aluminum alloy" },
+                    optionsAr: { A: "الحديد الزهر", B: "الحديد المطاوع", C: "الصلب", D: "سبائك الألومنيوم" },
+                    correct: "C",
+                    hint: "This material is strong and versatile.",
+                    hintAr: "هذه المادة قوية ومتعددة الاستخدامات."
+                },
+                {
+                    id: 27,
+                    question: "Which fish plate requirement allows track workers to repair or replace rail sections easily?",
+                    questionAr: "أي متطلب للوح السمكة يسمح لعمال المسار بإصلاح أو استبدال أقسام السكة بسهولة؟",
+                    options: { A: "They should resist all types of wear.", B: "They should provide easy means of renewal and replacement of rails.", C: "They should have increased depth for greater stiffness.", D: "They should absorb all shock caused by jumping wheels." },
+                    optionsAr: { A: "يجب أن تقاوم جميع أنواع التآكل.", B: "يجب أن توفر وسيلة سهلة لتجديد واستبدال القضبان.", C: "يجب أن يكون لها عمق زائد لصلابة أكبر.", D: "يجب أن تمتص كل الصدمات الناتجة عن قفز العجلات." },
+                    correct: "B",
+                    hint: "The answer is in the question: it's about renewal and replacement.",
+                    hintAr: "الإجابة في السؤال: الأمر يتعلق بالتجديد والاستبدال."
+                },
+                {
+                    id: 28,
+                    question: "What is the primary function of a fish plate regarding the alignment of the rail sections being joined?",
+                    questionAr: "ما هي الوظيفة الأساسية للوح السمكة فيما يتعلق بمحاذاة أقسام السكة التي يتم ربطها؟",
+                    options: { A: "They maintain the gauge in a better way than bearing plates.", B: "They keep the rail sections in vertical and horizontal plane.", C: "They prevent the tightening up of the bolts and nuts.", D: "They absorb the lateral thrust from the train wheels." },
+                    optionsAr: { A: "تحافظ على الاتساع بطريقة أفضل من ألواح التحميل.", B: "تحافظ على أقسام السكة في مستوى رأسي وأفقي.", C: "تمنع شد المسامير والصواميل.", D: "تمتص الدفع الجانبي من عجلات القطار." },
+                    correct: "B",
+                    hint: "It ensures the rails don't shift up/down or left/right at the joint.",
+                    hintAr: "يضمن عدم انزياح القضبان لأعلى/أسفل أو يسار/يمين عند الوصلة."
+                },
+                {
+                    id: 29,
+                    question: "Besides increasing stability and reducing maintenance, the use of bearing plates is noted to contribute to what aspect of train operation?",
+                    questionAr: "بالإضافة إلى زيادة الاستقرار وتقليل الصيانة، يُلاحظ أن استخدام ألواح التحميل يساهم في أي جانب من جوانب تشغيل القطار؟",
+                    options: { A: "Smooth running of trains.", B: "Increased speed limits.", C: "Lower fuel consumption.", D: "Elimination of rail joints." },
+                    optionsAr: { A: "التشغيل السلس للقطارات.", B: "زيادة حدود السرعة.", C: "انخفاض استهلاك الوقود.", D: "إلغاء وصلات السكة." },
+                    correct: "A",
+                    hint: "A stable track means a smoother ride.",
+                    hintAr: "المسار المستقر يعني رحلة أكثر سلاسة."
+                },
+                {
+                    id: 30,
+                    question: "What is the consequence of the cost of bearing plates being small in comparison to the benefits they provide?",
+                    questionAr: "ما هي نتيجة كون تكلفة ألواح التحميل صغيرة مقارنة بالفوائد التي تقدمها؟",
+                    options: { A: "They are only used in emergency repairs.", B: "They result in an overall increase in track maintenance cost.", C: "They lead to an increase in the life of sleepers and smooth running of trains.", D: "They require a separate set of maintenance tools." },
+                    optionsAr: { A: "تستخدم فقط في الإصلاحات الطارئة.", B: "تؤدي إلى زيادة عامة في تكلفة صيانة المسار.", C: "تؤدي إلى زيادة في عمر العوارض وتشغيل سلس للقطارات.", D: "تتطلب مجموعة منفصلة من أدوات الصيانة." },
+                    correct: "C",
+                    hint: "Low cost + High benefit = Better longevity and performance.",
+                    hintAr: "تكلفة منخفضة + فائدة عالية = طول عمر وأداء أفضل."
+                },
+                {
+                    id: 31,
+                    question: "Which of the following is a type of bearing plate that is used to achieve an inward tilt of the rail?",
+                    questionAr: "أي مما يلي هو نوع من ألواح التحميل يستخدم لتحقيق ميل داخلي للقضيب؟",
+                    options: { A: "Flat bearing plates", B: "Canted bearing plates", C: "Increased depth plates", D: "Bone shaped plates" },
+                    optionsAr: { A: "ألواح التحميل المسطحة", B: "ألواح التحميل المائلة (Canted)", C: "ألواح ذات عمق زائد", D: "ألواح على شكل عظمة" },
+                    correct: "B",
+                    hint: "'Cant' implies a slope or tilt.",
+                    hintAr: "'Cant' يعني ميل أو انحدار."
+                },
+                {
+                    id: 32,
+                    question: "For connecting flat-footed rails, the bone shaped fish plates are used to resist stresses due to what forces?",
+                    questionAr: "لتوصيل القضبان ذات القاعدة المسطحة، تستخدم ألواح السمكة على شكل عظمة لمقاومة الإجهادات الناتجة عن أي قوى؟",
+                    options: { A: "Horizontal movement only.", B: "Lateral and vertical bending of rails under impact of moving wheel loads.", C: "Thermal expansion only.", D: "Vibrations from the ballast." },
+                    optionsAr: { A: "الحركة الأفقية فقط.", B: "الانحناء الجانبي والرأسي للقضبان تحت تأثير أحمال العجلات المتحركة.", C: "التمدد الحراري فقط.", D: "الاهتزازات من البازلت." },
+                    correct: "B",
+                    hint: "Trains exert heavy loads downward (vertical) and sideways (lateral).",
+                    hintAr: "تمارس القطارات أحمالاً ثقيلة لأسفل (رأسي) وجانبية (جانبي)."
+                },
+                {
+                    id: 33,
+                    question: "Which material for bearing plates is described as 'occasionally adopted' for use?",
+                    questionAr: "أي مادة لألواح التحميل توصف بأنها 'تعتمد أحياناً' للاستخدام؟",
+                    options: { A: "Steel", B: "Cast iron", C: "Wrought iron", D: "Concrete" },
+                    optionsAr: { A: "الصلب", B: "الحديد الزهر", C: "الحديد المطاوع", D: "الخرسانة" },
+                    correct: "C",
+                    hint: "This is an older form of iron, less common now than steel.",
+                    hintAr: "هذا شكل قديم من الحديد، أقل شيوعاً الآن من الصلب."
+                },
+                {
+                    id: 34,
+                    question: "What is meant by the term 'rail cutting' in the context of sleepers?",
+                    questionAr: "ما المقصود بمصطلح 'قطع السكة' (rail cutting) في سياق العوارض؟",
+                    options: { A: "The process of cutting the rail to the desired length.", B: "Abrasion by rail to the contact surface of sleepers.", C: "The gap left between two rail sections at a joint.", D: "Erosion of the ballast due to water runoff." },
+                    optionsAr: { A: "عملية قطع السكة إلى الطول المطلوب.", B: "تآكل سطح تلامس العوارض بواسطة القضيب.", C: "الفجوة المتروكة بين قسمين من السكة عند الوصلة.", D: "تآكل البازلت بسبب جريان المياه." },
+                    correct: "B",
+                    hint: "It's when the rail physically grinds or cuts into the sleeper beneath it.",
+                    hintAr: "هو عندما يطحن القضيب فعلياً أو يقطع في العارضة تحته."
+                },
+                {
+                    id: 35,
+                    question: "What is the consequence of the overall stability of the track being increased by using bearing plates?",
+                    questionAr: "ما هي نتيجة زيادة الاستقرار العام للمسار باستخدام ألواح التحميل؟",
+                    options: { A: "The track is less resistant to derailments.", B: "It becomes impossible to replace the rails.", C: "The need for ballast is eliminated.", D: "The track is better able to withstand moving loads and forces." },
+                    optionsAr: { A: "المسار أقل مقاومة للانحراف.", B: "يصبح من المستحيل استبدال القضبان.", C: "يتم القضاء على الحاجة للبازلت.", D: "المسار أكثر قدرة على تحمل الأحمال والقوى المتحركة." },
+                    correct: "D",
+                    hint: "More stability = better ability to handle heavy trains.",
+                    hintAr: "استقرار أكثر = قدرة أفضل على التعامل مع القطارات الثقيلة."
+                },
+                {
+                    id: 36,
+                    question: "What specific type of cutting is prevented by bearing plates when they are used on curves?",
+                    questionAr: "ما هو النوع المحدد من القطع الذي تمنعه ألواح التحميل عند استخدامها في المنحنيات؟",
+                    options: { A: "Rail cutting", B: "Sleeper cutting", C: "Soil cutting", D: "Gauge cutting" },
+                    optionsAr: { A: "قطع السكة", B: "قطع العارضة", C: "قطع التربة", D: "قطع الاتساع" },
+                    correct: "C",
+                    hint: "On curves, forces transmit differently, affecting the ground/soil stability.",
+                    hintAr: "في المنحنيات، تنتقل القوى بشكل مختلف، مما يؤثر على استقرار الأرض/التربة."
+                },
+                {
+                    id: 37,
+                    question: "Why is it important that a fish plate does not fail under heavy loads and vibrations?",
+                    questionAr: "لماذا من المهم ألا ينهار لوح السمكة تحت الأحمال الثقيلة والاهتزازات؟",
+                    options: { A: "To allow for easy means of renewal of rails.", B: "To prevent the holes from becoming slightly wider.", C: "To ensure the continuity and stability of the rail joint under train traffic.", D: "To reduce the intensity of loading on the sleeper." },
+                    optionsAr: { A: "للسماح وسيلة سهلة لتجديد القضبان.", B: "لمنع الثقوب من أن تصبح أوسع قليلاً.", C: "لضمان استمرارية واستقرار وصلة السكة تحت حركة القطارات.", D: "لتقليل شدة التحميل على العارضة." },
+                    correct: "C",
+                    hint: "If it fails, the track breaks apart.",
+                    hintAr: "إذا فشل، ينكسر المسار."
+                },
+                {
+                    id: 38,
+                    question: "Which of the following is NOT one of the listed functions of a fish plate?",
+                    questionAr: "أي مما يلي ليس واحداً من الوظائف المدرجة للوح السمكة؟",
+                    options: { A: "They absorb the shock caused by the jumping of wheels.", B: "They reduce the cost of bearing plates.", C: "They allow the free longitudinal movement of rails.", D: "They provide the stability and strength of the rail joint." },
+                    optionsAr: { A: "تمتص الصدمة الناتجة عن قفز العجلات.", B: "تقلل تكلفة ألواح التحميل.", C: "تسمح بالحركة الطولية الحرة للقضبان.", D: "توفر استقرار وقوة وصلة السكة." },
+                    correct: "B",
+                    hint: "Fish plates connect rails; they don't influence the price of other components.",
+                    hintAr: "ألواح السمكة تربط القضبان؛ لا تؤثر على سعر المكونات الأخرى."
+                },
+                {
+                    id: 39,
+                    question: "Why are steel bearing plates commonly used on Indian Railways?",
+                    questionAr: "لماذا تستخدم ألواح التحميل الفولاذية بشكل شائع في السكك الحديدية الهندية؟",
+                    options: { A: "Because they are cheaper than cast iron plates.", B: "Because they are easily to fit in a position.", C: "Because they are occasionally adopted.", D: "Because they can only be used on soft wooden sleepers." },
+                    optionsAr: { A: "لأنها أرخص من ألواح الحديد الزهر.", B: "لأنه من السهل تثبيتها في موضعها.", C: "لأنها تعتمد أحياناً.", D: "لأنه لا يمكن استخدامها إلا على العوارض الخشبية اللينة." },
+                    correct: "B",
+                    hint: "Ease of installation is a key practical benefit.",
+                    hintAr: "سهولة التركيب هي فائدة عملية رئيسية."
+                },
+                {
+                    id: 40,
+                    question: "What happens to the spike system when bearing plates become loose, leading to a reduction in holding power?",
+                    questionAr: "ماذا يحدث لنظام المسامير عندما تصبح ألواح التحميل مرتخية، مما يؤدي إلى انخفاض في قوة التثبيت؟",
+                    options: { A: "The spikes are automatically replaced by the system.", B: "All other spikes must be pulled out when an injured spike is required to be re-driven.", C: "The moisture that enters makes the spikes rust and break immediately.", D: "The plate maintains the gauge in a better way, tightening the spikes." },
+                    optionsAr: { A: "يتم استبدال المسامير تلقائياً بواسطة النظام.", B: "يجب سحب جميع المسامير الأخرى عند الحاجة لإعادة دق مسمار تالف.", C: "الرطوبة التي تدخل تجعل المسامير تصدأ وتنكسر فوراً.", D: "يحافظ اللوح على الاتساع بطريقة أفضل، ويشد المسامير." },
+                    correct: "B",
+                    hint: "If one part of the fastening fails in this scenario, the whole group needs resetting.",
+                    hintAr: "إذا فشل جزء واحد من التثبيت في هذا السيناريو، فإن المجموعة بأكملها تحتاج إلى إعادة ضبط."
+                }
+            ];
+
+            // --- 2. LOGIC ---
+            const question = questionsData[currentQuestion];
+            const isAr = lang === 'ar';
+
+            const handleOptionClick = (key) => {
+                if (selectedOption) return;
+                setSelectedOption(key);
+                
+                const correct = key === question.correct;
+                setIsCorrect(correct);
+                
+                if (correct) {
+                    setScore(score + 1);
+                }
+            };
+
+            const handleNext = () => {
+                // If not answered, it counts as skipped (no score change)
+                // If answered, score was already updated in handleOptionClick
+                setSelectedOption(null);
+                setIsCorrect(null);
+                setShowHint(false);
+                
+                if (currentQuestion < questionsData.length - 1) {
+                    setCurrentQuestion(currentQuestion + 1);
+                } else {
+                    setShowScore(true);
+                }
+            };
+
+            const handleRestart = () => {
+                setCurrentQuestion(0);
+                setScore(0);
+                setShowScore(false);
+                setSelectedOption(null);
+                setIsCorrect(null);
+                setShowHint(false);
+            };
+
+            // --- 3. UI RENDER ---
+            return (
+                <div className={`min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 text-slate-200 font-sans flex flex-col items-center p-4 md:p-6 transition-colors duration-500 ${isAr ? 'font-cairo' : ''}`} style={{ fontFamily: isAr ? "'Cairo', sans-serif" : "'Inter', sans-serif" }}>
+                <style>{`
+                    .font-cairo { font-family: 'Cairo', sans-serif; direction: rtl; }
+                    .glass-panel {
+                        background: rgba(23, 23, 23, 0.6);
+                        backdrop-filter: blur(12px);
+                        border: 1px solid rgba(139, 92, 246, 0.2);
+                        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+                    }
+                    .option-button {
+                        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    }
+                    .option-button:active {
+                        transform: scale(0.99);
+                    }
+                `}</style>
+
+                {/* Header */}
+                <header className="w-full max-w-5xl flex flex-col md:flex-row justify-between items-center mb-8 p-6 glass-panel rounded-2xl mt-4 gap-4">
+                    <div className="flex items-center gap-4">
+                    <div className="bg-neutral-800 p-1 rounded-xl border border-neutral-700 overflow-hidden w-20 h-16 flex items-center justify-center shrink-0">
+                        {/* IMPORTANT: Replace the src below with your image path.
+                            1. Put your image (e.g., 'train-logo.png') in the same folder as this file.
+                            2. Change the src to: "train-logo.png"
+                        */}
+                        <img 
+                            src="/train-logo.png" 
+                            alt="Train Logo" 
+                            className="w-full h-full object-cover rounded-lg hover:scale-110 transition-transform duration-500"
+                            onError={(e) => {
+                            // Fallback if image not found yet
+                            e.target.src = "https://images.unsplash.com/photo-1474487548417-781cb714c2f0?q=80&w=200&auto=format&fit=crop";
+                            }}
+                        />
+                    </div>
+                    <h1 className="text-xl md:text-2xl font-bold text-slate-100 text-center md:text-left">
+                        {isAr ? "أنواع واختبار التجميع في مسار السكة الحديد" : "Types & Testing of Assembly in Railway Track"}
+                    </h1>
+                    </div>
+                    <button 
+                    onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 transition-all text-violet-300 font-bold shadow-lg active:scale-95"
+                    >
+                    <Globe className="w-4 h-4" />
+                    {lang === 'en' ? 'العربية' : 'English'}
+                    </button>
+                </header>
+
+                {/* Main Content */}
+                <main className="w-full max-w-5xl glass-panel rounded-3xl p-6 md:p-10 relative overflow-hidden min-h-[600px] flex flex-col">
+                    
+                    {/* Background Decorative Blobs */}
+                    <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+                        <div className="absolute -top-20 -right-20 w-96 h-96 bg-violet-900/20 rounded-full blur-[100px]"></div>
+                        <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-neutral-800/30 rounded-full blur-[100px]"></div>
+                    </div>
+
+                    {showScore ? (
+                    <div className="flex flex-col items-center justify-center flex-1 text-center z-10 animate-in fade-in zoom-in duration-500 py-10">
+                        <div className="mb-8 relative flex items-center justify-center">
+                            <div className="absolute inset-0 bg-violet-500/20 blur-2xl rounded-full w-40 h-40 mx-auto"></div>
+                            <div className="relative w-40 h-40 rounded-full border-4 border-violet-500/30 flex items-center justify-center bg-neutral-900/50 backdrop-blur-sm shadow-[0_0_30px_rgba(139,92,246,0.3)]">
+                                <span className="text-4xl md:text-5xl font-black text-violet-400 drop-shadow-2xl">
+                                    {Math.round((score / questionsData.length) * 100)}%
+                                </span>
+                            </div>
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white tracking-tight">{isAr ? "النتيجة النهائية" : "Final Score"}</h2>
+                        <div className="text-7xl md:text-8xl font-black text-violet-400 mb-8 tracking-tighter drop-shadow-lg">
+                            {score} <span className="text-3xl md:text-4xl text-slate-500 font-medium">/ {questionsData.length}</span>
+                        </div>
+                        <p className="text-slate-300 mb-12 text-xl md:text-2xl max-w-xl leading-relaxed font-light">
+                            {score === 40 ? (isAr ? "مذهل! درجة كاملة! أنت خبير حقيقي." : "Amazing! Perfect Score! You are a true expert.") : 
+                            score > 30 ? (isAr ? "عمل رائع! لديك معرفة قوية." : "Great job! You have strong knowledge.") : 
+                            (isAr ? "حاول مرة أخرى لتحسين نتيجتك." : "Try again to improve your score.")}
+                        </p>
+                        <button 
+                            onClick={handleRestart}
+                            className="group px-10 py-5 bg-violet-700 hover:bg-violet-600 text-white font-bold rounded-2xl transition-all hover:scale-105 shadow-lg flex items-center gap-3 text-lg"
+                        >
+                            <RefreshCcw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
+                            {isAr ? "إعادة الاختبار" : "Restart Quiz"}
+                        </button>
+                    </div>
+                    ) : (
+                    <div className="z-10 w-full flex flex-col h-full animate-in slide-in-from-right-8 duration-500" key={currentQuestion}>
+                        {/* Progress Bar */}
+                        <div className="mb-8 md:mb-12">
+                            <div className="flex justify-between text-sm md:text-base text-slate-400 mb-3 font-medium">
+                            <span>{isAr ? `السؤال ${currentQuestion + 1} من ${questionsData.length}` : `Question ${currentQuestion + 1} / ${questionsData.length}`}</span>
+                            <span className="text-violet-200 bg-violet-900/30 px-3 py-0.5 rounded-full border border-violet-800">{isAr ? `النقاط: ${score}` : `Score: ${score}`}</span>
+                            </div>
+                            <div className="w-full bg-neutral-900 h-3 rounded-full overflow-hidden border border-neutral-700">
+                            <div 
+                                className="bg-violet-600 h-full rounded-full transition-all duration-700 ease-out" 
+                                style={{ width: `${((currentQuestion + 1) / questionsData.length) * 100}%` }}
+                            ></div>
+                            </div>
+                        </div>
+
+                        {/* Question Text */}
+                        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-8 md:mb-12 leading-snug text-slate-100 drop-shadow-md">
+                            {isAr ? question.questionAr : question.question}
+                        </h2>
+
+                        {/* Options Grid */}
+                        <div className="grid gap-4 md:gap-5 mb-8 md:mb-10">
+                            {Object.entries(isAr ? question.optionsAr : question.options).map(([key, text]) => {
+                            let optionClass = "option-button w-full p-5 md:p-6 text-left rounded-2xl border border-neutral-700 bg-neutral-800/50 hover:bg-neutral-700/80 flex items-start gap-5 cursor-pointer relative overflow-hidden group";
+                            let iconClass = "w-8 h-8 rounded-full bg-neutral-900 text-slate-400 flex items-center justify-center font-bold border border-neutral-600 group-hover:border-violet-400 group-hover:text-violet-300 transition-colors mt-0.5 shrink-0";
+                            let icon = <div className={iconClass}>{key}</div>;
+                            
+                            if (selectedOption === key) {
+                                if (isCorrect) {
+                                    optionClass = "option-button w-full p-5 md:p-6 text-left rounded-2xl border border-emerald-500/50 bg-emerald-900/20 flex items-start gap-5 cursor-pointer relative overflow-hidden";
+                                    icon = <div className="w-8 h-8 rounded-full bg-emerald-900/50 text-emerald-400 flex items-center justify-center border border-emerald-500/50 shrink-0"><CheckCircle2 className="w-5 h-5" /></div>;
+                                } else {
+                                    optionClass = "option-button w-full p-5 md:p-6 text-left rounded-2xl border border-red-500/50 bg-red-900/20 flex items-start gap-5 cursor-pointer relative overflow-hidden";
+                                    icon = <div className="w-8 h-8 rounded-full bg-red-900/50 text-red-400 flex items-center justify-center border border-red-500/50 shrink-0"><XCircle className="w-5 h-5" /></div>;
+                                }
+                            } else if (selectedOption && key === question.correct) {
+                                    optionClass = "option-button w-full p-5 md:p-6 text-left rounded-2xl border border-emerald-500/50 bg-emerald-900/20 flex items-start gap-5 cursor-pointer relative overflow-hidden opacity-100";
+                                    icon = <div className="w-8 h-8 rounded-full bg-emerald-900/50 text-emerald-400 flex items-center justify-center border border-emerald-500/50 shrink-0"><CheckCircle2 className="w-5 h-5" /></div>;
+                            } else if (selectedOption) {
+                                optionClass = "option-button w-full p-5 md:p-6 text-left rounded-2xl border border-neutral-800 bg-neutral-900/30 flex items-start gap-5 cursor-not-allowed opacity-40";
+                            }
+
+                            return (
+                                <button 
+                                key={key} 
+                                onClick={() => handleOptionClick(key)}
+                                disabled={!!selectedOption}
+                                className={optionClass}
+                                >
+                                {icon}
+                                <span className={`font-medium text-lg md:text-xl leading-relaxed ${selectedOption && (key === question.correct || selectedOption === key) ? 'text-slate-100' : 'text-slate-300'}`}>{text}</span>
+                                </button>
+                            );
+                            })}
+                        </div>
+
+                        {/* Footer Actions */}
+                        <div className="mt-auto flex flex-col-reverse md:flex-row gap-6 justify-between items-center border-t border-neutral-700/50 pt-8">
+                            <div className="flex flex-col items-start gap-3 w-full md:w-auto">
+                            <button 
+                                onClick={() => setShowHint(!showHint)}
+                                className="text-violet-300 hover:text-violet-200 text-sm font-bold flex items-center gap-2 transition-colors px-3 py-2 rounded-lg hover:bg-violet-900/20 active:scale-95"
+                            >
+                                <Lightbulb className={`w-4 h-4 ${showHint ? 'fill-current' : ''}`} />
+                                {isAr ? (showHint ? "إخفاء التلميح" : "إظهار التلميح") : (showHint ? "Hide Hint" : "Show Hint")}
+                            </button>
+                            
+                            {showHint && (
+                                <div className="text-base text-slate-300 bg-neutral-900/95 p-5 rounded-2xl border-l-4 border-violet-500 shadow-xl w-full md:max-w-lg animate-in slide-in-from-bottom-2 fade-in">
+                                <span className="text-violet-400 font-bold mr-2 block mb-1 uppercase tracking-wider text-xs">Hint</span>
+                                {isAr ? question.hintAr : question.hint}
+                                </div>
+                            )}
+                            </div>
+
+                            {/* Action Buttons: Next or Skip */}
+                            <button 
+                            onClick={handleNext}
+                            className={`w-full md:w-auto px-8 py-3 font-bold rounded-xl transition-all flex items-center justify-center gap-3 active:scale-95 text-lg ${
+                                selectedOption 
+                                ? "bg-slate-100 text-slate-900 hover:bg-white shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:-translate-y-1" 
+                                : "bg-neutral-800 text-slate-400 hover:bg-neutral-700 border border-neutral-600"
+                            }`}
+                            >
+                            {selectedOption ? (
+                                <>
+                                    {isAr ? "السؤال التالي" : "Next Question"}
+                                    {isAr ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
+                                </>
+                            ) : (
+                                <>
+                                    {isAr ? "تخطي" : "Skip"}
+                                    <SkipForward className="w-5 h-5" />
+                                </>
+                            )}
+                            </button>
+                        </div>
+                    </div>
+                    )}
+                </main>
+
+                {/* Credits */}
+                <footer className="mt-12 mb-6 text-center text-slate-500 text-sm font-medium tracking-wide">
+                    <p className="flex items-center justify-center gap-2">
+                    <span>Created by</span>
+                    <span className="text-violet-400 font-bold">Programmer Bilal Mohamed</span>
+                    </p>
+                </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
