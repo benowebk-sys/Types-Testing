@@ -556,7 +556,7 @@
                             }}
                         />
                     </div>
-                    <h1 className="text-xl md:text-2xl font-bold text-slate-100 text-center md:text-left">
+                    <h1 className="text-xl md:text-2xl font-bold text-slate-100 text-center md:text-start">
                         {isAr ? "أنواع واختبار التجميع في مسار السكة الحديد" : "Types & Testing of Assembly in Railway Track"}
                     </h1>
                     </div>
@@ -570,7 +570,7 @@
                 </header>
 
                 {/* Main Content */}
-                <main className="w-full max-w-5xl glass-panel rounded-3xl p-6 md:p-10 relative overflow-hidden min-h-[600px] flex flex-col">
+                <main className="w-full max-w-5xl glass-panel rounded-3xl p-4 md:p-10 relative overflow-hidden min-h-[600px] flex flex-col">
                     
                     {/* Background Decorative Blobs */}
                     <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -581,25 +581,25 @@
                     {showScore ? (
                     <div className="flex flex-col items-center justify-center flex-1 text-center z-10 animate-in fade-in zoom-in duration-500 py-10">
                         <div className="mb-8 relative flex items-center justify-center">
-                            <div className="absolute inset-0 bg-violet-500/20 blur-2xl rounded-full w-40 h-40 mx-auto"></div>
-                            <div className="relative w-40 h-40 rounded-full border-4 border-violet-500/30 flex items-center justify-center bg-neutral-900/50 backdrop-blur-sm shadow-[0_0_30px_rgba(139,92,246,0.3)]">
-                                <span className="text-4xl md:text-5xl font-black text-violet-400 drop-shadow-2xl">
+                            <div className="absolute inset-0 bg-violet-500/20 blur-2xl rounded-full w-32 h-32 md:w-40 md:h-40 mx-auto"></div>
+                            <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-violet-500/30 flex items-center justify-center bg-neutral-900/50 backdrop-blur-sm shadow-[0_0_30px_rgba(139,92,246,0.3)]">
+                                <span className="text-3xl md:text-5xl font-black text-violet-400 drop-shadow-2xl">
                                     {Math.round((score / questionsData.length) * 100)}%
                                 </span>
                             </div>
                         </div>
-                        <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white tracking-tight">{isAr ? "النتيجة النهائية" : "Final Score"}</h2>
-                        <div className="text-7xl md:text-8xl font-black text-violet-400 mb-8 tracking-tighter drop-shadow-lg">
+                        <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white tracking-tight">{isAr ? "النتيجة النهائية" : "Final Score"}</h2>
+                        <div className="text-5xl md:text-8xl font-black text-violet-400 mb-8 tracking-tighter drop-shadow-lg">
                             {score} <span className="text-3xl md:text-4xl text-slate-500 font-medium">/ {questionsData.length}</span>
                         </div>
-                        <p className="text-slate-300 mb-12 text-xl md:text-2xl max-w-xl leading-relaxed font-light">
+                        <p className="text-slate-300 mb-12 text-lg md:text-2xl max-w-xl leading-relaxed font-light">
                             {score === 40 ? (isAr ? "مذهل! درجة كاملة! أنت خبير حقيقي." : "Amazing! Perfect Score! You are a true expert.") : 
                             score > 30 ? (isAr ? "عمل رائع! لديك معرفة قوية." : "Great job! You have strong knowledge.") : 
                             (isAr ? "حاول مرة أخرى لتحسين نتيجتك." : "Try again to improve your score.")}
                         </p>
                         <button 
                             onClick={handleRestart}
-                            className="group px-10 py-5 bg-violet-700 hover:bg-violet-600 text-white font-bold rounded-2xl transition-all hover:scale-105 shadow-lg flex items-center gap-3 text-lg"
+                            className="group px-8 py-4 md:px-10 md:py-5 bg-violet-700 hover:bg-violet-600 text-white font-bold rounded-2xl transition-all hover:scale-105 shadow-lg flex items-center gap-3 text-lg"
                         >
                             <RefreshCcw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
                             {isAr ? "إعادة الاختبار" : "Restart Quiz"}
@@ -629,23 +629,23 @@
                         {/* Options Grid */}
                         <div className="grid gap-4 md:gap-5 mb-8 md:mb-10">
                             {Object.entries(isAr ? question.optionsAr : question.options).map(([key, text]) => {
-                            let optionClass = "option-button w-full p-5 md:p-6 text-left rounded-2xl border border-neutral-700 bg-neutral-800/50 hover:bg-neutral-700/80 flex items-start gap-5 cursor-pointer relative overflow-hidden group";
+                            let optionClass = `option-button w-full p-4 md:p-6 rounded-2xl border border-neutral-700 bg-neutral-800/50 hover:bg-neutral-700/80 flex items-start gap-5 cursor-pointer relative overflow-hidden group ${isAr ? 'text-right' : 'text-left'}`;
                             let iconClass = "w-8 h-8 rounded-full bg-neutral-900 text-slate-400 flex items-center justify-center font-bold border border-neutral-600 group-hover:border-violet-400 group-hover:text-violet-300 transition-colors mt-0.5 shrink-0";
                             let icon = <div className={iconClass}>{key}</div>;
                             
                             if (selectedOption === key) {
                                 if (isCorrect) {
-                                    optionClass = "option-button w-full p-5 md:p-6 text-left rounded-2xl border border-emerald-500/50 bg-emerald-900/20 flex items-start gap-5 cursor-pointer relative overflow-hidden";
+                                    optionClass = `option-button w-full p-4 md:p-6 rounded-2xl border border-emerald-500/50 bg-emerald-900/20 flex items-start gap-5 cursor-pointer relative overflow-hidden ${isAr ? 'text-right' : 'text-left'}`;
                                     icon = <div className="w-8 h-8 rounded-full bg-emerald-900/50 text-emerald-400 flex items-center justify-center border border-emerald-500/50 shrink-0"><CheckCircle2 className="w-5 h-5" /></div>;
                                 } else {
-                                    optionClass = "option-button w-full p-5 md:p-6 text-left rounded-2xl border border-red-500/50 bg-red-900/20 flex items-start gap-5 cursor-pointer relative overflow-hidden";
+                                    optionClass = `option-button w-full p-4 md:p-6 rounded-2xl border border-red-500/50 bg-red-900/20 flex items-start gap-5 cursor-pointer relative overflow-hidden ${isAr ? 'text-right' : 'text-left'}`;
                                     icon = <div className="w-8 h-8 rounded-full bg-red-900/50 text-red-400 flex items-center justify-center border border-red-500/50 shrink-0"><XCircle className="w-5 h-5" /></div>;
                                 }
                             } else if (selectedOption && key === question.correct) {
-                                    optionClass = "option-button w-full p-5 md:p-6 text-left rounded-2xl border border-emerald-500/50 bg-emerald-900/20 flex items-start gap-5 cursor-pointer relative overflow-hidden opacity-100";
+                                    optionClass = `option-button w-full p-4 md:p-6 rounded-2xl border border-emerald-500/50 bg-emerald-900/20 flex items-start gap-5 cursor-pointer relative overflow-hidden opacity-100 ${isAr ? 'text-right' : 'text-left'}`;
                                     icon = <div className="w-8 h-8 rounded-full bg-emerald-900/50 text-emerald-400 flex items-center justify-center border border-emerald-500/50 shrink-0"><CheckCircle2 className="w-5 h-5" /></div>;
                             } else if (selectedOption) {
-                                optionClass = "option-button w-full p-5 md:p-6 text-left rounded-2xl border border-neutral-800 bg-neutral-900/30 flex items-start gap-5 cursor-not-allowed opacity-40";
+                                optionClass = `option-button w-full p-4 md:p-6 rounded-2xl border border-neutral-800 bg-neutral-900/30 flex items-start gap-5 cursor-not-allowed opacity-40 ${isAr ? 'text-right' : 'text-left'}`;
                             }
 
                             return (
@@ -656,7 +656,7 @@
                                 className={optionClass}
                                 >
                                 {icon}
-                                <span className={`font-medium text-lg md:text-xl leading-relaxed ${selectedOption && (key === question.correct || selectedOption === key) ? 'text-slate-100' : 'text-slate-300'}`}>{text}</span>
+                                <span className={`font-medium text-base md:text-xl leading-relaxed ${selectedOption && (key === question.correct || selectedOption === key) ? 'text-slate-100' : 'text-slate-300'}`}>{text}</span>
                                 </button>
                             );
                             })}
@@ -722,4 +722,4 @@
         root.render(<App />);
     </script>
 </body>
-</html>
+</html> 
