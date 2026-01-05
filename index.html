@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Railway Track Quiz - اختبار تجميع السكة الحديد</title>
+    <title>Rev Types & Testing of Assembly Railway Track</title>
     
     <!-- تحميل مكتبة Tailwind CSS للتصميم -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -20,7 +20,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-950 p-2 md:p-4 font-sans text-slate-200">
+<body class="bg-gray-950">
 
     <div id="root"></div>
 
@@ -44,7 +44,7 @@
             const [showHint, setShowHint] = useState(false);
             const [lang, setLang] = useState('en'); 
 
-            // --- DATA ---
+            // --- DATA (65 Questions total) ---
             const questionsData = [
                 { id: 1, question: "What is the primary purpose of fittings and fastenings in a railway track?", questionAr: "ما هو الغرض الأساسي من التركيبات والمثبتات في خط السكة الحديد؟", options: { A: "To reduce the cost of track maintenance.", B: "Securing connections between rail to rail and rail to sleepers.", C: "Maintaining the gauge in an exact manner on curves only.", D: "To increase the bearing area of the ballast on the formation." }, optionsAr: { A: "لتقليل تكلفة صيانة المسار.", B: "تأمين الوصلات بين القضبان وبعضها وبين القضبان والعوارض.", C: "الحفاظ على الاتساع بدقة في المنحنيات فقط.", D: "لزيادة مساحة التحميل للبازلت على التكوين." }, correct: "B", hint: "Think about what holds the different parts of the track together securely.", hintAr: "فكر في ما يربط أجزاء المسار المختلفة ببعضها البعض بإحكام." },
                 { id: 2, question: "Which component is specifically used at the joints of rails to maintain the continuity of the rail line?", questionAr: "ما هو المكون المستخدم تحديداً عند وصلات القضبان للحفاظ على استمرارية خط السكة؟", options: { A: "Bearing plates", B: "Fish plates", C: "Rail chairs", D: "Spikes" }, optionsAr: { A: "ألواح التحميل", B: "ألواح السمكة (Fish plates)", C: "كراسي السكة", D: "المسامير" }, correct: "B", hint: "It's named after a sea creature and joins two rails end-to-end.", hintAr: "سميت على اسم مخلوق بحري وتربط قضيبين من النهاية إلى النهاية." },
@@ -280,6 +280,7 @@
                 },
                 {
                     id: 60,
+                    // UPDATED CORRECT ANSWER: A
                     question: "Which of the following bearing plates require a spring key?",
                     questionAr: "أي من ألواح التحميل التالية تتطلب مفتاح زنبركي؟",
                     options: { A: "Special C bearing plates", B: "Cast iron anti creep plates", C: "Flat MS bearing plates", D: "MS canted bearing plates" },
@@ -300,6 +301,7 @@
                 },
                 {
                     id: 62,
+                    // UPDATED CORRECT ANSWER: A
                     question: "What type of fittings are used for fastening slide chairs to the sleepers?",
                     questionAr: "ما نوع التركيبات المستخدمة لتثبيت كراسي الانزلاق بالعوارض؟",
                     options: { A: "Fang bolts", B: "Round spikes", C: "Screw spikes", D: "Dog spikes" },
@@ -344,11 +346,9 @@
             const question = questionsData[currentQuestion];
             const isAr = lang === 'ar';
 
-            // Check if current question is answered
             const selectedOption = userAnswers[currentQuestion] || null;
             const isCorrect = selectedOption ? selectedOption === question.correct : null;
 
-            // Update score dynamically based on all correct answers
             const scoreVal = useMemo(() => {
                 let s = 0;
                 Object.keys(userAnswers).forEach(qIndex => {
@@ -359,18 +359,49 @@
                 return s;
             }, [userAnswers]);
 
+            // Calculate detailed stats for the final screen
+            const stats = useMemo(() => {
+                let correct = 0;
+                let incorrect = 0;
+                let answered = 0;
+                const total = questionsData.length;
+
+                Object.keys(userAnswers).forEach(key => {
+                    const qIndex = parseInt(key);
+                    // Check if question was answered (not skipped/null)
+                    if (userAnswers[qIndex]) {
+                        answered++;
+                        if (userAnswers[qIndex] === questionsData[qIndex].correct) {
+                            correct++;
+                        } else {
+                            incorrect++;
+                        }
+                    }
+                });
+                
+                const skipped = total - answered;
+                
+                return { 
+                    correct, 
+                    incorrect, 
+                    skipped, 
+                    total,
+                    correctPercent: Math.round((correct / total) * 100),
+                    incorrectPercent: Math.round((incorrect / total) * 100),
+                    skippedPercent: Math.round((skipped / total) * 100)
+                };
+            }, [userAnswers]);
+
             const handleOptionClick = (key) => {
-                if (selectedOption) return; // Prevent changing answer
+                if (selectedOption) return;
                 setUserAnswers({ ...userAnswers, [currentQuestion]: key });
             };
 
             const handleNext = () => {
-                // If answer selected or skipped (user logic: next implies done with this question)
                 setShowHint(false);
                 if (currentQuestion < questionsData.length - 1) {
                     setCurrentQuestion(currentQuestion + 1);
                 } else {
-                    setScore(scoreVal); // Just for display consistency at end
                     setShowScore(true);
                 }
             };
@@ -385,14 +416,13 @@
             const handleRestart = () => {
                 setCurrentQuestion(0);
                 setUserAnswers({});
-                setScore(0);
                 setShowScore(false);
                 setShowHint(false);
             };
 
             // --- 3. UI RENDER ---
             return (
-                <div className={`min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 text-slate-200 font-sans flex flex-col items-center p-2 md:p-6 transition-colors duration-500 ${isAr ? 'font-cairo' : ''}`} style={{ fontFamily: isAr ? "'Cairo', sans-serif" : "'Inter', sans-serif" }}>
+                <div className={`min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 text-slate-200 font-sans flex flex-col items-center p-4 md:p-6 transition-colors duration-500 ${isAr ? 'font-cairo' : ''}`} style={{ fontFamily: isAr ? "'Cairo', sans-serif" : "'Inter', sans-serif" }}>
                 <style>{`
                     .font-cairo { font-family: 'Cairo', sans-serif; direction: rtl; }
                     .glass-panel {
@@ -410,33 +440,33 @@
                 `}</style>
 
                 {/* Header */}
-                <header className="w-full max-w-5xl flex flex-row justify-between items-center mb-3 p-3 glass-panel rounded-xl mt-2 gap-2">
-                    <div className="flex items-center gap-2">
-                        <div className="bg-neutral-800 p-1 rounded-xl border border-neutral-700 overflow-hidden w-10 h-10 md:w-16 md:h-12 flex items-center justify-center shrink-0">
-                            <img 
-                                src="train-logo.png" 
-                                alt="Train Logo" 
-                                className="w-full h-full object-cover rounded-lg hover:scale-110 transition-transform duration-500"
-                                onError={(e) => {
-                                e.target.src = "https://images.unsplash.com/photo-1474487548417-781cb714c2f0?q=80&w=200&auto=format&fit=crop";
-                                }}
-                            />
-                        </div>
-                        <h1 className="text-sm md:text-xl font-bold text-slate-100 text-center md:text-left leading-tight">
-                            {isAr ? "اختبار تجميع السكة" : "Railway Assembly Quiz"}
+                <header className="w-full max-w-5xl flex flex-col md:flex-row justify-between items-center mb-8 p-6 glass-panel rounded-2xl mt-4 gap-4">
+                    <div className="flex items-center gap-4">
+                    <div className="bg-neutral-800 p-1 rounded-xl border border-neutral-700 overflow-hidden w-20 h-16 flex items-center justify-center shrink-0">
+                        <img 
+                            src="train-logo.png" 
+                            alt="Train Logo" 
+                            className="w-full h-full object-cover rounded-lg hover:scale-110 transition-transform duration-500"
+                            onError={(e) => {
+                            e.target.src = "https://images.unsplash.com/photo-1474487548417-781cb714c2f0?q=80&w=200&auto=format&fit=crop";
+                            }}
+                        />
+                    </div>
+                        <h1 className="text-xl md:text-2xl font-bold text-slate-100 text-center md:text-left">
+                            Rev Types & Testing of Assembly Railway Track
                         </h1>
                     </div>
                     <button 
                         onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}
-                        className="flex items-center gap-1 md:gap-2 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 transition-all text-violet-300 font-bold shadow-lg active:scale-95 text-xs md:text-sm shrink-0"
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 transition-all text-violet-300 font-bold shadow-lg active:scale-95"
                     >
-                        <Globe className="w-3 h-3 md:w-4 md:h-4" />
+                        <Globe className="w-4 h-4" />
                         {lang === 'en' ? 'العربية' : 'English'}
                     </button>
                 </header>
 
                 {/* Main Content */}
-                <main className="w-full max-w-5xl glass-panel rounded-2xl md:rounded-3xl p-3 md:p-10 relative overflow-hidden min-h-[auto] flex flex-col">
+                <main className="w-full max-w-5xl glass-panel rounded-3xl p-6 md:p-10 relative overflow-hidden min-h-[600px] flex flex-col">
                     
                     {/* Background Decorative Blobs */}
                     <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -445,27 +475,41 @@
                     </div>
 
                     {showScore ? (
-                    <div className="flex flex-col items-center justify-center flex-1 text-center z-10 animate-in fade-in zoom-in duration-500 py-10">
-                        <div className="mb-8 relative flex items-center justify-center">
-                            <div className="absolute inset-0 bg-violet-500/20 blur-2xl rounded-full w-32 h-32 md:w-40 md:h-40 mx-auto"></div>
-                            <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-violet-500/30 flex items-center justify-center bg-neutral-900/50 backdrop-blur-sm shadow-[0_0_30px_rgba(139,92,246,0.3)]">
-                                <span className="text-3xl md:text-5xl font-black text-violet-400 drop-shadow-2xl">
-                                    {Math.round((scoreVal / questionsData.length) * 100)}%
-                                </span>
+                    <div className="flex flex-col items-center justify-center flex-1 text-center z-10 animate-in fade-in zoom-in duration-500 py-6 w-full">
+                        
+                        <h2 className="text-3xl md:text-5xl font-bold mb-8 text-white tracking-tight">{isAr ? "النتيجة النهائية" : "Final Score"}</h2>
+                        
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl mb-12">
+                            {/* Correct */}
+                            <div className="bg-emerald-900/30 border border-emerald-500/30 p-6 rounded-2xl flex flex-col items-center gap-2">
+                                <div className="text-emerald-400 font-bold text-xl">{isAr ? "إجابات صحيحة" : "Correct"}</div>
+                                <div className="text-5xl font-black text-emerald-400">{stats.correct}</div>
+                                <div className="text-emerald-300/60 text-sm font-medium">{stats.correctPercent}%</div>
+                            </div>
+
+                            {/* Incorrect */}
+                            <div className="bg-red-900/30 border border-red-500/30 p-6 rounded-2xl flex flex-col items-center gap-2">
+                                <div className="text-red-400 font-bold text-xl">{isAr ? "إجابات خاطئة" : "Incorrect"}</div>
+                                <div className="text-5xl font-black text-red-400">{stats.incorrect}</div>
+                                <div className="text-red-300/60 text-sm font-medium">{stats.incorrectPercent}%</div>
+                            </div>
+
+                            {/* Skipped */}
+                            <div className="bg-amber-900/30 border border-amber-500/30 p-6 rounded-2xl flex flex-col items-center gap-2">
+                                <div className="text-amber-400 font-bold text-xl">{isAr ? "تم تخطيها" : "Skipped"}</div>
+                                <div className="text-5xl font-black text-amber-400">{stats.skipped}</div>
+                                <div className="text-amber-300/60 text-sm font-medium">{stats.skippedPercent}%</div>
                             </div>
                         </div>
-                        <h2 className="text-2xl md:text-5xl font-bold mb-6 text-white tracking-tight">{isAr ? "النتيجة النهائية" : "Final Score"}</h2>
-                        <div className="text-4xl md:text-8xl font-black text-violet-400 mb-8 tracking-tighter drop-shadow-lg">
-                            {scoreVal} <span className="text-2xl md:text-4xl text-slate-500 font-medium">/ {questionsData.length}</span>
+
+                        <div className="text-slate-400 mb-8 font-medium">
+                            {isAr ? `مجموع الأسئلة: ${questionsData.length}` : `Total Questions: ${questionsData.length}`}
                         </div>
-                        <p className="text-slate-300 mb-12 text-base md:text-2xl max-w-xl leading-relaxed font-light">
-                            {scoreVal === questionsData.length ? (isAr ? "مذهل! درجة كاملة! أنت خبير حقيقي." : "Amazing! Perfect Score! You are a true expert.") : 
-                            scoreVal > (questionsData.length * 0.75) ? (isAr ? "عمل رائع! لديك معرفة قوية." : "Great job! You have strong knowledge.") : 
-                            (isAr ? "حاول مرة أخرى لتحسين نتيجتك." : "Try again to improve your score.")}
-                        </p>
+
                         <button 
                             onClick={handleRestart}
-                            className="group px-8 py-4 md:px-10 md:py-5 bg-violet-700 hover:bg-violet-600 text-white font-bold rounded-2xl transition-all hover:scale-105 shadow-lg flex items-center gap-3 text-lg"
+                            className="group px-10 py-5 bg-violet-700 hover:bg-violet-600 text-white font-bold rounded-2xl transition-all hover:scale-105 shadow-lg flex items-center gap-3 text-lg"
                         >
                             <RefreshCcw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
                             {isAr ? "إعادة الاختبار" : "Restart Quiz"}
@@ -474,12 +518,12 @@
                     ) : (
                     <div className="z-10 w-full flex flex-col h-full animate-in slide-in-from-right-8 duration-500" key={currentQuestion}>
                         {/* Progress Bar */}
-                        <div className="mb-3 md:mb-8">
-                            <div className="flex justify-between text-xs md:text-base text-slate-400 mb-2 font-medium">
+                        <div className="mb-8 md:mb-12">
+                            <div className="flex justify-between text-sm md:text-base text-slate-400 mb-3 font-medium">
                             <span>{isAr ? `السؤال ${currentQuestion + 1} من ${questionsData.length}` : `Question ${currentQuestion + 1} / ${questionsData.length}`}</span>
-                            <span className="text-violet-200 bg-violet-900/30 px-2 py-0.5 md:px-3 rounded-full border border-violet-800">{isAr ? `النقاط: ${scoreVal}` : `Score: ${scoreVal}`}</span>
+                            <span className="text-violet-200 bg-violet-900/30 px-3 py-0.5 rounded-full border border-violet-800">{isAr ? `النقاط: ${scoreVal}` : `Score: ${scoreVal}`}</span>
                             </div>
-                            <div className="w-full bg-neutral-900 h-2 md:h-3 rounded-full overflow-hidden border border-neutral-700">
+                            <div className="w-full bg-neutral-900 h-3 rounded-full overflow-hidden border border-neutral-700">
                             <div 
                                 className="bg-violet-600 h-full rounded-full transition-all duration-700 ease-out" 
                                 style={{ width: `${((currentQuestion + 1) / questionsData.length) * 100}%` }}
@@ -488,30 +532,30 @@
                         </div>
 
                         {/* Question Text */}
-                        <h2 className="text-lg md:text-3xl font-bold mb-4 md:mb-8 leading-snug text-slate-100 drop-shadow-md">
+                        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-8 md:mb-12 leading-snug text-slate-100 drop-shadow-md">
                             {isAr ? question.questionAr : question.question}
                         </h2>
 
                         {/* Options Grid */}
-                        <div className="grid gap-2 md:gap-4 mb-4 md:mb-8">
+                        <div className="grid gap-4 md:gap-5 mb-8 md:mb-10">
                             {Object.entries(isAr ? question.optionsAr : question.options).map(([key, text]) => {
-                            let optionClass = `option-button w-full p-3 md:p-5 rounded-xl md:rounded-2xl border border-neutral-700 bg-neutral-800/50 hover:bg-neutral-700/80 flex items-start gap-3 md:gap-5 cursor-pointer relative overflow-hidden group ${isAr ? 'text-right' : 'text-left'}`;
-                            let iconClass = "w-6 h-6 md:w-8 md:h-8 rounded-full bg-neutral-900 text-slate-400 flex items-center justify-center font-bold border border-neutral-600 group-hover:border-violet-400 group-hover:text-violet-300 transition-colors mt-0.5 shrink-0 text-xs md:text-base";
+                            let optionClass = `option-button w-full p-5 md:p-6 text-left rounded-2xl border border-neutral-700 bg-neutral-800/50 hover:bg-neutral-700/80 flex items-start gap-5 cursor-pointer relative overflow-hidden group ${isAr ? 'text-right' : 'text-left'}`;
+                            let iconClass = "w-8 h-8 rounded-full bg-neutral-900 text-slate-400 flex items-center justify-center font-bold border border-neutral-600 group-hover:border-violet-400 group-hover:text-violet-300 transition-colors mt-0.5 shrink-0";
                             let icon = <div className={iconClass}>{key}</div>;
                             
                             if (selectedOption === key) {
                                 if (isCorrect) {
-                                    optionClass = `option-button w-full p-3 md:p-5 rounded-xl md:rounded-2xl border border-emerald-500/50 bg-emerald-900/20 flex items-start gap-3 md:gap-5 cursor-pointer relative overflow-hidden ${isAr ? 'text-right' : 'text-left'}`;
-                                    icon = <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-emerald-900/50 text-emerald-400 flex items-center justify-center border border-emerald-500/50 shrink-0 text-xs md:text-base"><CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" /></div>;
+                                    optionClass = `option-button w-full p-5 md:p-6 text-left rounded-2xl border border-emerald-500/50 bg-emerald-900/20 flex items-start gap-5 cursor-pointer relative overflow-hidden ${isAr ? 'text-right' : 'text-left'}`;
+                                    icon = <div className="w-8 h-8 rounded-full bg-emerald-900/50 text-emerald-400 flex items-center justify-center border border-emerald-500/50 shrink-0"><CheckCircle2 className="w-5 h-5" /></div>;
                                 } else {
-                                    optionClass = `option-button w-full p-3 md:p-5 rounded-xl md:rounded-2xl border border-red-500/50 bg-red-900/20 flex items-start gap-3 md:gap-5 cursor-pointer relative overflow-hidden ${isAr ? 'text-right' : 'text-left'}`;
-                                    icon = <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-red-900/50 text-red-400 flex items-center justify-center border border-red-500/50 shrink-0 text-xs md:text-base"><XCircle className="w-4 h-4 md:w-5 md:h-5" /></div>;
+                                    optionClass = `option-button w-full p-5 md:p-6 text-left rounded-2xl border border-red-500/50 bg-red-900/20 flex items-start gap-5 cursor-pointer relative overflow-hidden ${isAr ? 'text-right' : 'text-left'}`;
+                                    icon = <div className="w-8 h-8 rounded-full bg-red-900/50 text-red-400 flex items-center justify-center border border-red-500/50 shrink-0"><XCircle className="w-5 h-5" /></div>;
                                 }
                             } else if (selectedOption && key === question.correct) {
-                                    optionClass = `option-button w-full p-3 md:p-5 rounded-xl md:rounded-2xl border border-emerald-500/50 bg-emerald-900/20 flex items-start gap-3 md:gap-5 cursor-pointer relative overflow-hidden opacity-100 ${isAr ? 'text-right' : 'text-left'}`;
-                                    icon = <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-emerald-900/50 text-emerald-400 flex items-center justify-center border border-emerald-500/50 shrink-0 text-xs md:text-base"><CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" /></div>;
+                                    optionClass = `option-button w-full p-5 md:p-6 text-left rounded-2xl border border-emerald-500/50 bg-emerald-900/20 flex items-start gap-5 cursor-pointer relative overflow-hidden opacity-100 ${isAr ? 'text-right' : 'text-left'}`;
+                                    icon = <div className="w-8 h-8 rounded-full bg-emerald-900/50 text-emerald-400 flex items-center justify-center border border-emerald-500/50 shrink-0"><CheckCircle2 className="w-5 h-5" /></div>;
                             } else if (selectedOption) {
-                                optionClass = `option-button w-full p-3 md:p-5 rounded-xl md:rounded-2xl border border-neutral-800 bg-neutral-900/30 flex items-start gap-3 md:gap-5 cursor-not-allowed opacity-40 ${isAr ? 'text-right' : 'text-left'}`;
+                                optionClass = `option-button w-full p-5 md:p-6 text-left rounded-2xl border border-neutral-800 bg-neutral-900/30 flex items-start gap-5 cursor-not-allowed opacity-40 ${isAr ? 'text-right' : 'text-left'}`;
                             }
 
                             return (
@@ -522,49 +566,49 @@
                                 className={optionClass}
                                 >
                                 {icon}
-                                <span className={`font-medium text-sm md:text-xl leading-relaxed ${selectedOption && (key === question.correct || selectedOption === key) ? 'text-slate-100' : 'text-slate-300'}`}>{text}</span>
+                                <span className={`font-medium text-lg md:text-xl leading-relaxed ${selectedOption && (key === question.correct || selectedOption === key) ? 'text-slate-100' : 'text-slate-300'}`}>{text}</span>
                                 </button>
                             );
                             })}
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="mt-auto flex flex-col-reverse md:flex-row gap-4 md:gap-6 justify-between items-center border-t border-neutral-700/50 pt-4 md:pt-8">
-                            <div className="flex flex-col items-start gap-2 md:gap-3 w-full md:w-auto">
+                        <div className="mt-auto flex flex-col-reverse md:flex-row gap-6 justify-between items-center border-t border-neutral-700/50 pt-8">
+                            <div className="flex flex-col items-start gap-3 w-full md:w-auto">
                             <button 
                                 onClick={() => setShowHint(!showHint)}
-                                className="text-violet-300 hover:text-violet-200 text-xs md:text-sm font-bold flex items-center gap-2 transition-colors px-2 py-1.5 md:px-3 md:py-2 rounded-lg hover:bg-violet-900/20 active:scale-95"
+                                className="text-violet-300 hover:text-violet-200 text-sm font-bold flex items-center gap-2 transition-colors px-3 py-2 rounded-lg hover:bg-violet-900/20 active:scale-95"
                             >
-                                <Lightbulb className={`w-3 h-3 md:w-4 md:h-4 ${showHint ? 'fill-current' : ''}`} />
+                                <Lightbulb className={`w-4 h-4 ${showHint ? 'fill-current' : ''}`} />
                                 {isAr ? (showHint ? "إخفاء التلميح" : "إظهار التلميح") : (showHint ? "Hide Hint" : "Show Hint")}
                             </button>
                             
                             {showHint && (
-                                <div className="text-xs md:text-base text-slate-300 bg-neutral-900/95 p-3 md:p-5 rounded-xl md:rounded-2xl border-l-4 border-violet-500 shadow-xl w-full md:max-w-lg animate-in slide-in-from-bottom-2 fade-in">
-                                <span className="text-violet-400 font-bold mr-2 block mb-1 uppercase tracking-wider text-[10px] md:text-xs">Hint</span>
+                                <div className="text-base text-slate-300 bg-neutral-900/95 p-5 rounded-2xl border-l-4 border-violet-500 shadow-xl w-full md:max-w-lg animate-in slide-in-from-bottom-2 fade-in">
+                                <span className="text-violet-400 font-bold mr-2 block mb-1 uppercase tracking-wider text-xs">Hint</span>
                                 {isAr ? question.hintAr : question.hint}
                                 </div>
                             )}
                             </div>
 
                             {/* Action Buttons: Prev, Next or Skip */}
-                            <div className="flex gap-2 md:gap-4 w-full md:w-auto">
+                            <div className="flex gap-4 w-full md:w-auto">
                                 <button 
                                     onClick={handlePrevious}
                                     disabled={currentQuestion === 0}
-                                    className={`flex-1 md:flex-none md:w-auto px-4 py-2 md:px-6 md:py-3 font-bold rounded-xl transition-all flex items-center justify-center gap-2 md:gap-3 active:scale-95 text-base md:text-lg ${
+                                    className={`w-full md:w-auto px-6 py-3 font-bold rounded-xl transition-all flex items-center justify-center gap-3 active:scale-95 text-lg ${
                                         currentQuestion === 0
                                         ? "bg-neutral-800/50 text-neutral-600 cursor-not-allowed border border-neutral-800"
                                         : "bg-neutral-800 text-slate-400 hover:bg-neutral-700 border border-neutral-600"
                                     }`}
                                 >
-                                    {isAr ? <ArrowRight className="w-4 h-4 md:w-5 md:h-5" /> : <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />}
+                                    {isAr ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
                                     {isAr ? "السابق" : "Previous"}
                                 </button>
 
                                 <button 
                                     onClick={handleNext}
-                                    className={`flex-1 md:flex-none md:w-auto px-6 py-2 md:px-8 md:py-3 font-bold rounded-xl transition-all flex items-center justify-center gap-2 md:gap-3 active:scale-95 text-base md:text-lg ${
+                                    className={`w-full md:w-auto px-8 py-3 font-bold rounded-xl transition-all flex items-center justify-center gap-3 active:scale-95 text-lg ${
                                         selectedOption 
                                         ? "bg-slate-100 text-slate-900 hover:bg-white shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:-translate-y-1" 
                                         : "bg-neutral-800 text-slate-400 hover:bg-neutral-700 border border-neutral-600"
@@ -573,12 +617,12 @@
                                     {selectedOption ? (
                                         <>
                                             {isAr ? "السؤال التالي" : "Next Question"}
-                                            {isAr ? <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" /> : <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />}
+                                            {isAr ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
                                         </>
                                     ) : (
                                         <>
                                             {isAr ? "تخطي" : "Skip"}
-                                            <SkipForward className="w-4 h-4 md:w-5 md:h-5" />
+                                            <SkipForward className="w-5 h-5" />
                                         </>
                                     )}
                                 </button>
@@ -589,7 +633,7 @@
                 </main>
 
                 {/* Credits */}
-                <footer className="mt-6 md:mt-12 mb-4 md:mb-6 text-center text-slate-500 text-xs md:text-sm font-medium tracking-wide">
+                <footer className="mt-12 mb-6 text-center text-slate-500 text-sm font-medium tracking-wide">
                     <p className="flex items-center justify-center gap-2">
                     <span>Created by</span>
                     <span className="text-violet-400 font-bold">Programmer Bilal Mohamed</span>
